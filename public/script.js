@@ -2,18 +2,20 @@ const canvas = document.getElementById('aquarium');
 const ctx = canvas.getContext('2d');
 
 let width, height;
+const topGap = 60; // <--- Ավելացրինք բացվածք վերևից (60px դատարկ տարածք)
 
-// 1. Էկրանի չափսերի և հստակության կարգավորում (Retina Display support)
+// 1. Էկրանի չափսերի և հստակության կարգավորում
 function resize() {
     const dpr = window.devicePixelRatio || 1;
     width = window.innerWidth;
-    height = window.innerHeight;
+    height = window.innerHeight - topGap; // <--- Բարձրությունից հանում ենք բացվածքը
     
     canvas.width = width * dpr;
     canvas.height = height * dpr;
     
     canvas.style.width = width + 'px';
     canvas.style.height = height + 'px';
+    canvas.style.marginTop = topGap + 'px'; // <--- Կտավը իջեցնում ենք ներքև
     
     ctx.scale(dpr, dpr);
 }
@@ -40,17 +42,18 @@ let foods = [];
 
 // 3. Մատի կամ մկնիկի կառավարում
 function handleInput(x, y, isNewTouch = false) {
+    let adjustedY = y - topGap; // <--- Կարևոր է. ուղղում ենք Y-ը, որ ձուկը ճիշտ հետևի մատին
+    
     let dx = x - fish.x;
-    let dy = y - fish.y;
+    let dy = adjustedY - fish.y;
     fish.targetAngle = Math.atan2(dy, dx);
     fish.isFollowing = true;
 
-    // Եթե սեղմել է (touchstart/click), ավելացնենք կեր
+    // Եթե սեղմել է, ավելացնենք կեր (ուղղված Y-ով)
     if (isNewTouch) {
-        foods.push({ x: x, y: y, size: 6, speed: 0.8 });
+        foods.push({ x: x, y: adjustedY, size: 6, speed: 0.8 });
     }
 
-    // Եթե ձուկը շատ մոտ է մատին, դադարեցնել հետևելը
     let dist = Math.hypot(dx, dy);
     if (dist < 30) fish.isFollowing = false;
 }
@@ -75,7 +78,7 @@ canvas.addEventListener('touchend', () => {
     fish.isFollowing = false;
 });
 
-// 4. Հիմնական նկարչության ցիկլը (Animation Loop)
+// 4. Հիմնական նկարչության ցիկլը
 function draw() {
     ctx.clearRect(0, 0, width, height);
 
@@ -85,13 +88,12 @@ function draw() {
         ctx.beginPath();
         ctx.arc(f.x, f.y, f.size, 0, Math.PI * 2);
         ctx.fill();
-        f.y += f.speed; // Կերը դանդաղ իջնում է
+        f.y += f.speed;
 
-        // Ստուգում ենք՝ ձուկը կերավ կերը
         let distToFood = Math.hypot(f.x - fish.x, f.y - fish.y);
         if (distToFood < 40) {
             foods.splice(index, 1);
-            if (fish.size < 120) fish.size += 1; // Ձուկը մեծանում է
+            if (fish.size < 120) fish.size += 1;
         }
         if (f.y > height) foods.splice(index, 1);
     });
@@ -103,24 +105,22 @@ function draw() {
         ctx.arc(b.x, b.y, b.size, 0, Math.PI * 2);
         ctx.fill();
         b.y -= b.speed;
-        if (b.y < -10) bubbles.splice(index, 1);
+        if (b.y < -10) bubbles.splice(index, 1); // Պղպջակը կանհետանա ջրի երեսին հասնելիս
     });
 
     // --- Ձկան Տրամաբանություն ---
-    let margin = 80;
+    let margin = 50; // Մի քիչ փոքրացրինք մարժան
     
     if (!fish.isFollowing) {
-        // Պատահական լողալ
         fish.targetAngle += (Math.random() - 0.5) * 0.05;
 
-        // Պատերից հետ դառնալ
+        // Պատերից հետ դառնալ (Հիմա height-ը արդեն 90% է, ձուկը դուրս չի գա ջրից)
         if (fish.x > width - margin) fish.targetAngle = Math.PI; 
         if (fish.x < margin) fish.targetAngle = 0; 
         if (fish.y > height - margin) fish.targetAngle = -Math.PI / 2; 
         if (fish.y < margin) fish.targetAngle = Math.PI / 2; 
     }
 
-    // Անկյան սահուն փոփոխություն (Lerp)
     let angleDiff = fish.targetAngle - fish.angle;
     while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
     while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
@@ -129,7 +129,6 @@ function draw() {
     fish.x += Math.cos(fish.angle) * fish.speed;
     fish.y += Math.sin(fish.angle) * fish.speed;
 
-    // Շրջվելու էֆեկտ (Flip)
     let isHeadingLeft = Math.cos(fish.angle) < 0;
     fish.targetFlipScale = isHeadingLeft ? 1 : -1;
     fish.flipScale += (fish.targetFlipScale - fish.flipScale) * 0.1;
@@ -137,11 +136,8 @@ function draw() {
     // --- Ձկան նկարչություն ---
     ctx.save();
     ctx.translate(fish.x, fish.y);
-    
-    // Թեթև օրորվելու էֆեկտ
     let tilt = Math.sin(Date.now() * 0.003) * 0.1;
     ctx.rotate(tilt + (isHeadingLeft ? fish.angle - Math.PI : fish.angle));
-    
     ctx.scale(fish.flipScale, 1);
     
     ctx.shadowBlur = 15;

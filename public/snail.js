@@ -1,10 +1,6 @@
 export default class Snail {
     constructor() {
-        this.x = 100;
-        this.y = 0;
-        this.speed = 0.15;
-        this.dir = 1;
-        this.size = 28;
+        this.x = 100; this.y = 0; this.speed = 0.15; this.dir = 1; this.size = 28;
     }
     update(width) {
         this.x += this.speed * this.dir;

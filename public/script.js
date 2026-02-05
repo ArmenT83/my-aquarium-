@@ -1,6 +1,6 @@
-import Fish from './Fish.js';
-import Snail from './Snail.js';
-import SoundManager from './SoundManager.js';
+import Fish from './fish.js';
+import Snail from './snail.js';
+import SoundManager from './soundmanager.js';
 
 const canvas = document.getElementById('aquarium');
 const ctx = canvas.getContext('2d');

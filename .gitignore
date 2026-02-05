@@ -1,0 +1,14 @@
+# Կախվածություններ (dependencies)
+node_modules/
+
+# Գաղտնի ֆայլեր
+.env
+
+# Օպերացիոն համակարգի ֆայլեր
+.DS_Store
+Thumbs.db
+
+# Լոգեր
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

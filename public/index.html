@@ -3,11 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Իմ Ակվարիումը</title>
+    <title>Իմ Օնլայն Ակվարիումը</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <canvas id="aquarium"></canvas>
+    <div class="aquarium-wrapper">
+        <!-- Կտավը (ձուկ, մամուռ, խխունջ) -->
+        <canvas id="aquarium"></canvas>
+        
+        <!-- Ավազը հատակին -->
+        <div class="sand"></div>
+        
+        <!-- Ապակու փայլը -->
+        <div class="glass-reflection"></div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>

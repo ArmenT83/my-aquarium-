@@ -4,9 +4,8 @@ const ctx = canvas.getContext('2d');
 let width, height;
 let bubbles = [];
 let foods = [];
-let mossPlants = [];
+let seaweedGroups = []; // Մամուռների (ջրիմուռների) զանգված
 
-// 1. Էկրանի չափսերն ու մամուռի ստեղծումը
 function resize() {
     const dpr = window.devicePixelRatio || 1;
     width = canvas.clientWidth;
@@ -15,36 +14,39 @@ function resize() {
     canvas.height = height * dpr;
     ctx.scale(dpr, dpr);
     
-    initMoss();
-    snail.y = height - 35; // Խխունջին դնում ենք ավազին
+    initSeaweed();
+    snail.y = height - 25; // Խխունջին մի քիչ ավելի ցածր դնենք
 }
 
-function initMoss() {
-    mossPlants = [];
-    for (let i = 0; i < 7; i++) {
-        mossPlants.push({
-            x: (width / 7) * i + Math.random() * 40,
-            h: 30 + Math.random() * 40,
-            w: 12 + Math.random() * 8,
-            off: Math.random() * 100
+// Ավելի բնական ջրիմուռների ստեղծում
+function initSeaweed() {
+    seaweedGroups = [];
+    for (let i = 0; i < 8; i++) {
+        seaweedGroups.push({
+            x: (width / 8) * i + Math.random() * 30,
+            baseWidth: 5 + Math.random() * 5,
+            strands: [
+                { h: 40 + Math.random() * 40, off: Math.random() * 100, xOff: -5 },
+                { h: 30 + Math.random() * 30, off: Math.random() * 100, xOff: 0 },
+                { h: 50 + Math.random() * 40, off: Math.random() * 100, xOff: 5 }
+            ]
         });
     }
 }
 
 window.addEventListener('resize', resize);
 
-// 2. Ձկան և Խխունջի տվյալները
 let fish = {
-    x: 100, y: 100,
+    x: 150, y: 150,
     speed: 2.2, angle: 0, targetAngle: 0,
-    turnSpeed: 0.05, size: 50,
+    turnSpeed: 0.05, size: 55,
     flipScale: 1, targetFlipScale: 1,
     isFollowing: false
 };
 
-let snail = { x: 50, y: 0, speed: 0.3, dir: 1, size: 30 };
+// ԽԽՈՒՆՋԻ ՓՈՓՈԽՈՒԹՅՈՒՆ. արագությունը դարձրինք 0.15 (ավելի դանդաղ)
+let snail = { x: 100, y: 0, speed: 0.15, dir: 1, size: 28 };
 
-// 3. Կառավարում
 function handleInput(x, y, isNewTouch = false) {
     const rect = canvas.getBoundingClientRect();
     let mX = x - rect.left;
@@ -61,20 +63,31 @@ canvas.addEventListener('touchstart', (e) => {
 }, { passive: false });
 canvas.addEventListener('touchend', () => fish.isFollowing = false);
 
-// 4. Հիմնական Draw ցիկլը
 function draw() {
     ctx.clearRect(0, 0, width, height);
 
-    // Նկարում ենք մամուռը
-    mossPlants.forEach(p => {
-        ctx.beginPath();
-        let wave = Math.sin(Date.now() * 0.002 + p.off) * 12;
-        ctx.moveTo(p.x, height - 30);
-        ctx.quadraticCurveTo(p.x + wave, height - 30 - p.h / 2, p.x, height - 30 - p.h);
-        ctx.strokeStyle = "#2d5a27";
-        ctx.lineWidth = p.w;
-        ctx.lineCap = "round";
-        ctx.stroke();
+    // --- ԲՆԱԿԱՆ ՋՐԻՄՈՒՌՆԵՐԻ ՆԿԱՐՉՈՒԹՅՈՒՆ ---
+    seaweedGroups.forEach(group => {
+        group.strands.forEach(s => {
+            ctx.beginPath();
+            let wave = Math.sin(Date.now() * 0.0015 + s.off) * 10;
+            ctx.moveTo(group.x + s.xOff, height - 30);
+            ctx.bezierCurveTo(
+                group.x + s.xOff + wave, height - 30 - s.h / 2, 
+                group.x + s.xOff - wave, height - 30 - s.h, 
+                group.x + s.xOff + wave / 2, height - 30 - s.h
+            );
+            
+            // Գույնը դարձնում ենք գրադիենտ (ներքևը մուգ, վերևը բաց)
+            let grad = ctx.createLinearGradient(0, height - 30, 0, height - 30 - s.h);
+            grad.addColorStop(0, "#1a3c15");
+            grad.addColorStop(1, "#4d9344");
+            
+            ctx.strokeStyle = grad;
+            ctx.lineWidth = 4;
+            ctx.lineCap = "round";
+            ctx.stroke();
+        });
     });
 
     // Կերակուր
@@ -89,12 +102,13 @@ function draw() {
         if (f.y > height - 40) foods.splice(i, 1);
     });
 
-    // Խխունջը
+    // --- ԽԽՈՒՆՋ (Ուղղված դիրք ու արագություն) ---
     snail.x += snail.speed * snail.dir;
-    if (snail.x > width - 30 || snail.x < 30) snail.dir *= -1;
+    if (snail.x > width - 40 || snail.x < 40) snail.dir *= -1;
     ctx.save();
     ctx.translate(snail.x, snail.y);
-    ctx.scale(snail.dir, 1);
+    // Խխունջը 🐌 նայում է ձախ, դրա համար եթե dir = 1 (աջ), պետք է flip անել
+    ctx.scale(snail.dir === 1 ? -1 : 1, 1); 
     ctx.font = snail.size + "px Arial";
     ctx.textAlign = "center";
     ctx.fillText("🐌", 0, 0);
